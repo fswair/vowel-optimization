@@ -144,7 +144,9 @@ Return ONLY the improved EVAL_SPEC_CONTEXT text (no markdown fences, no explanat
 
         examples: list[dict[str, Any]] = []
 
-        for traj, score in zip(eval_batch.trajectories, eval_batch.scores, strict=False):
+        for traj, score in zip(
+            eval_batch.trajectories, eval_batch.scores, strict=False
+        ):
             result = traj.eval_result
             record: dict[str, Any] = {
                 "function": result.func_name,
@@ -207,7 +209,9 @@ Return ONLY the improved EVAL_SPEC_CONTEXT text (no markdown fences, no explanat
 
             feedback_text = "\n\n".join(feedback_parts)
             logfire.info(
-                "proposer_feedback", num_examples=len(examples), feedback_chars=len(feedback_text)
+                "proposer_feedback",
+                num_examples=len(examples),
+                feedback_chars=len(feedback_text),
             )
 
             prompt = f"""Current EVAL_SPEC_CONTEXT (the prompt being optimized):

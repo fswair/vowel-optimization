@@ -1,7 +1,52 @@
 [project]
-name = "vowel-optimization-gepa"
+name = "vowel-optimization"
 version = "0.1.0"
-description = "silence is golden"
+description = "GePa-powered prompt optimization for vowel eval spec generation"
 readme = "README.md"
-requires-python = ">=3.10"
-dependencies = []
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "Mert", email = "your.email@example.com" }
+]
+keywords = ["llm", "testing", "optimization", "prompt-engineering", "gepa"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Testing",
+]
+
+dependencies = [
+    "vowel>=0.2.7",
+    "gepa",
+    "pydantic-ai",
+    "logfire",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+vowel-optimize = "vowel_optimization.run_optimization:main"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["vowel_optimization"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+ignore = ["E501"]

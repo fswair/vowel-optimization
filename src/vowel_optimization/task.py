@@ -17,7 +17,6 @@ from decimal import Decimal
 import logfire
 import yaml
 from pydantic_ai import Agent
-
 from vowel.eval_types import EvalsSource
 from vowel.runner import RunEvals
 from vowel.tdd import TDDGenerator
@@ -35,9 +34,7 @@ class CaseFailure:
     case_id: str
     evaluator: str
     reason: str
-    category: (
-        str  # WRONG_EXPECTED, INVENTED_RAISES, FORMAT_MISMATCH, OVER_STRICT_ASSERTION, BAD_INPUT
-    )
+    category: str  # WRONG_EXPECTED, INVENTED_RAISES, FORMAT_MISMATCH, OVER_STRICT_ASSERTION, BAD_INPUT
 
 
 @dataclass
@@ -316,7 +313,9 @@ Fix ONLY the failing cases. Do not change passing cases. Return the complete cor
 # ──────────────────────────────────────────────────────────────────────
 
 
-def _score_summary(summary, func_case: FunctionCase) -> tuple[int, int, list[CaseFailure]]:
+def _score_summary(
+    summary, func_case: FunctionCase
+) -> tuple[int, int, list[CaseFailure]]:
     """Extract per-assertion scores from a run summary."""
     total_assertions = 0
     passed_assertions = 0
@@ -370,9 +369,13 @@ def generate_and_score(
             # 1. Generate signature via TDD
             with logfire.span("generate_signature", func_name=func_case.name):
                 gen = TDDGenerator(model=model)
-                signature = gen.generate_signature(func_case.description, func_case.name)
+                signature = gen.generate_signature(
+                    func_case.description, func_case.name
+                )
                 logfire.info(
-                    "signature_generated", func_name=func_case.name, params=str(signature.params)
+                    "signature_generated",
+                    func_name=func_case.name,
+                    params=str(signature.params),
                 )
 
             # 2. Build eval agent with CANDIDATE prompt
@@ -479,7 +482,9 @@ IMPORTANT: In assertions, use `input[0]`, `input[1]` to access positional args.
                     raise last_error  # type: ignore[misc]
 
                 logfire.info(
-                    "eval_yaml_generated", func_name=func_case.name, yaml_len=len(yaml_spec)
+                    "eval_yaml_generated",
+                    func_name=func_case.name,
+                    yaml_len=len(yaml_spec),
                 )
 
             # 4. Post-validate: fix wrong expected values by running the real function
@@ -495,7 +500,9 @@ IMPORTANT: In assertions, use `input[0]`, `input[1]` to access positional args.
                 runner = runner.ignore_duration()
                 summary = runner.run()
 
-                total_assertions, passed_assertions, failures = _score_summary(summary, func_case)
+                total_assertions, passed_assertions, failures = _score_summary(
+                    summary, func_case
+                )
 
             # 6. Self-correction: if there are failures, ask LLM to fix them
             if failures and total_assertions > 0:
@@ -503,13 +510,21 @@ IMPORTANT: In assertions, use `input[0]`, `input[1]` to access positional args.
                 # Only self-correct if <30% failures (not totally broken)
                 if fail_ratio < 0.30:
                     with logfire.span(
-                        "self_correct", func_name=func_case.name, num_failures=len(failures)
+                        "self_correct",
+                        func_name=func_case.name,
+                        num_failures=len(failures),
                     ):
                         failure_dicts = [
-                            {"case_id": f.case_id, "evaluator": f.evaluator, "reason": f.reason}
+                            {
+                                "case_id": f.case_id,
+                                "evaluator": f.evaluator,
+                                "reason": f.reason,
+                            }
                             for f in failures
                         ]
-                        corrected = _self_correct(yaml_spec, failure_dicts, eval_agent, sig_context)
+                        corrected = _self_correct(
+                            yaml_spec, failure_dicts, eval_agent, sig_context
+                        )
                         if corrected:
                             # Re-validate
                             try:
@@ -521,40 +536,55 @@ IMPORTANT: In assertions, use `input[0]`, `input[1]` to access positional args.
                                     corrected = v2.fixed_yaml
 
                                 # Post-validate again
-                                corrected = _post_validate_expected(corrected, func_case)
+                                corrected = _post_validate_expected(
+                                    corrected, func_case
+                                )
 
                                 # Re-score
                                 runner2 = RunEvals.from_source(corrected)
-                                runner2 = runner2.with_functions({func_case.name: func_case.func})
+                                runner2 = runner2.with_functions(
+                                    {func_case.name: func_case.func}
+                                )
                                 runner2 = runner2.ignore_duration()
                                 summary2 = runner2.run()
 
                                 t2, p2, f2 = _score_summary(summary2, func_case)
 
                                 # Keep corrected version only if it's better
-                                if t2 > 0 and (p2 / t2) > (passed_assertions / total_assertions):
+                                if t2 > 0 and (p2 / t2) > (
+                                    passed_assertions / total_assertions
+                                ):
                                     logfire.info(
                                         "self_correct_improved",
                                         func_name=func_case.name,
                                         old_pass=f"{passed_assertions}/{total_assertions}",
                                         new_pass=f"{p2}/{t2}",
                                     )
-                                    total_assertions, passed_assertions, failures = t2, p2, f2
+                                    total_assertions, passed_assertions, failures = (
+                                        t2,
+                                        p2,
+                                        f2,
+                                    )
                                     result.yaml_spec = corrected
                                 else:
                                     logfire.info(
-                                        "self_correct_no_improvement", func_name=func_case.name
+                                        "self_correct_no_improvement",
+                                        func_name=func_case.name,
                                     )
                             except Exception as e:
                                 logfire.info(
-                                    "self_correct_failed", func_name=func_case.name, error=str(e)
+                                    "self_correct_failed",
+                                    func_name=func_case.name,
+                                    error=str(e),
                                 )
 
             # 7. Finalize scores
             result.failures = failures
             result.passed_cases = passed_assertions
             result.total_cases = total_assertions
-            result.pass_rate = passed_assertions / total_assertions if total_assertions > 0 else 0.0
+            result.pass_rate = (
+                passed_assertions / total_assertions if total_assertions > 0 else 0.0
+            )
 
             logfire.info(
                 "scoring_complete",

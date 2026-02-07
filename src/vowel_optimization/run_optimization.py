@@ -19,24 +19,29 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
 import logfire
-
 from vowel.context import EVAL_SPEC_CONTEXT
 
 from .adapter import MODEL, PROPOSER_MODEL, create_adapter
 from .functions import FUNCTION_CASES
 from .task import generate_and_score
 
+import dotenv 
+
+dotenv.load_dotenv()
+
 # ── Logfire setup ───────────────────────────────────────────
-logfire.configure(
-    service_name="vowel-optimization",
-    send_to_logfire="if-token-present",
-)
-logfire.instrument_pydantic_ai()
-logfire.instrument_httpx(capture_all=True)
+if os.getenv("LOGFIRE_ENABLED", "true").lower() == "true":
+    logfire.configure(
+        service_name="vowel-optimization",
+        send_to_logfire="if-token-present",
+    )
+    logfire.instrument_pydantic_ai()
+    logfire.instrument_httpx(capture_all=True)
 
 
 def run_evaluation(
@@ -48,7 +53,9 @@ def run_evaluation(
 
     Returns average pass rate.
     """
-    with logfire.span("evaluation_run", label=label, context_chars=len(eval_spec_context)):
+    with logfire.span(
+        "evaluation_run", label=label, context_chars=len(eval_spec_context)
+    ):
         print(f"\n{'=' * 60}")
         print(f"Evaluating [{label}] context ({len(eval_spec_context)} chars)")
         print(f"{'=' * 60}")
@@ -73,7 +80,9 @@ def run_evaluation(
             if result.error:
                 print(f"ERROR: {result.error[:80]}")
             else:
-                print(f"{result.pass_rate:.0%} ({result.passed_cases}/{result.total_cases})")
+                print(
+                    f"{result.pass_rate:.0%} ({result.passed_cases}/{result.total_cases})"
+                )
                 for f in result.failures:
                     all_failures[f.category] = all_failures.get(f.category, 0) + 1
 
@@ -203,7 +212,9 @@ def run_compare(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Vowel eval spec prompt optimization via GePa")
+    parser = argparse.ArgumentParser(
+        description="Vowel eval spec prompt optimization via GePa"
+    )
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
 
     # eval
@@ -218,7 +229,9 @@ def main() -> int:
     opt_p.add_argument("--max-calls", type=int, default=50, help="Max metric calls")
     opt_p.add_argument("--output", type=str, help="File to save optimized context")
     opt_p.add_argument("--model", type=str, default=MODEL, help="Eval model")
-    opt_p.add_argument("--proposer-model", type=str, default=PROPOSER_MODEL, help="Proposer model")
+    opt_p.add_argument(
+        "--proposer-model", type=str, default=PROPOSER_MODEL, help="Proposer model"
+    )
     opt_p.add_argument(
         "--seed-file", type=str, help="Start from a previously optimized context file"
     )
