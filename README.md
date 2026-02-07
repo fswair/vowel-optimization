@@ -3,4 +3,4 @@ Optimize AI-generated framework of VOWEL evaluation language with GePa evolution
 
 # reference
 
-Used @dmontagu 's [pydantic-ai-gepa-example](https://github.com/dmontagu/pydantic-ai-gepa-example) as seed repository.
+Used [@dmontagu](https://github.com/dmontagu) 's [pydantic-ai-gepa-example](https://github.com/dmontagu/pydantic-ai-gepa-example) as seed repository.
