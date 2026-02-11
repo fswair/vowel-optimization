@@ -1,6 +1,6 @@
 """Task: generate eval spec and score it against the original function.
 
-This is the core logic that GePa calls for each candidate prompt:
+This is the core logic that GEPA calls for each candidate prompt:
 1. Create an agent with the candidate's eval_spec_context as system prompt
 2. Generate eval YAML for a function
 3. Post-validate expected values against the real function
@@ -34,7 +34,9 @@ class CaseFailure:
     case_id: str
     evaluator: str
     reason: str
-    category: str  # WRONG_EXPECTED, INVENTED_RAISES, FORMAT_MISMATCH, OVER_STRICT_ASSERTION, BAD_INPUT
+    category: (
+        str  # WRONG_EXPECTED, INVENTED_RAISES, FORMAT_MISMATCH, OVER_STRICT_ASSERTION, BAD_INPUT
+    )
 
 
 @dataclass
@@ -299,7 +301,7 @@ Fix ONLY the failing cases. Do not change passing cases. Return the complete cor
 - Return ONLY the corrected YAML, no explanation
 """
     try:
-        result = agent.run_sync(correction_prompt)
+        result = agent.run_sync(correction_prompt, output_type=EvalsSource)
         corrected = result.output.yaml_spec
         # Basic sanity: must parse as YAML
         yaml.safe_load(corrected)
@@ -313,9 +315,7 @@ Fix ONLY the failing cases. Do not change passing cases. Return the complete cor
 # ──────────────────────────────────────────────────────────────────────
 
 
-def _score_summary(
-    summary, func_case: FunctionCase
-) -> tuple[int, int, list[CaseFailure]]:
+def _score_summary(summary, func_case: FunctionCase) -> tuple[int, int, list[CaseFailure]]:
     """Extract per-assertion scores from a run summary."""
     total_assertions = 0
     passed_assertions = 0
@@ -369,9 +369,7 @@ def generate_and_score(
             # 1. Generate signature via TDD
             with logfire.span("generate_signature", func_name=func_case.name):
                 gen = TDDGenerator(model=model)
-                signature = gen.generate_signature(
-                    func_case.description, func_case.name
-                )
+                signature = gen.generate_signature(func_case.description, func_case.name)
                 logfire.info(
                     "signature_generated",
                     func_name=func_case.name,
@@ -454,7 +452,7 @@ IMPORTANT: In assertions, use `input[0]`, `input[1]` to access positional args.
                 last_error = None
                 for attempt in range(2):
                     try:
-                        eval_result = gen.eval_agent.run_sync(prompt)
+                        eval_result = gen.eval_agent.run_sync(prompt, output_type=EvalsSource)
                         candidate = eval_result.output.yaml_spec
 
                         # Sanitize YAML tags
@@ -500,9 +498,7 @@ IMPORTANT: In assertions, use `input[0]`, `input[1]` to access positional args.
                 runner = runner.ignore_duration()
                 summary = runner.run()
 
-                total_assertions, passed_assertions, failures = _score_summary(
-                    summary, func_case
-                )
+                total_assertions, passed_assertions, failures = _score_summary(summary, func_case)
 
             # 6. Self-correction: if there are failures, ask LLM to fix them
             if failures and total_assertions > 0:
@@ -522,9 +518,7 @@ IMPORTANT: In assertions, use `input[0]`, `input[1]` to access positional args.
                             }
                             for f in failures
                         ]
-                        corrected = _self_correct(
-                            yaml_spec, failure_dicts, eval_agent, sig_context
-                        )
+                        corrected = _self_correct(yaml_spec, failure_dicts, eval_agent, sig_context)
                         if corrected:
                             # Re-validate
                             try:
@@ -536,24 +530,18 @@ IMPORTANT: In assertions, use `input[0]`, `input[1]` to access positional args.
                                     corrected = v2.fixed_yaml
 
                                 # Post-validate again
-                                corrected = _post_validate_expected(
-                                    corrected, func_case
-                                )
+                                corrected = _post_validate_expected(corrected, func_case)
 
                                 # Re-score
                                 runner2 = RunEvals.from_source(corrected)
-                                runner2 = runner2.with_functions(
-                                    {func_case.name: func_case.func}
-                                )
+                                runner2 = runner2.with_functions({func_case.name: func_case.func})
                                 runner2 = runner2.ignore_duration()
                                 summary2 = runner2.run()
 
                                 t2, p2, f2 = _score_summary(summary2, func_case)
 
                                 # Keep corrected version only if it's better
-                                if t2 > 0 and (p2 / t2) > (
-                                    passed_assertions / total_assertions
-                                ):
+                                if t2 > 0 and (p2 / t2) > (passed_assertions / total_assertions):
                                     logfire.info(
                                         "self_correct_improved",
                                         func_name=func_case.name,
@@ -582,9 +570,7 @@ IMPORTANT: In assertions, use `input[0]`, `input[1]` to access positional args.
             result.failures = failures
             result.passed_cases = passed_assertions
             result.total_cases = total_assertions
-            result.pass_rate = (
-                passed_assertions / total_assertions if total_assertions > 0 else 0.0
-            )
+            result.pass_rate = passed_assertions / total_assertions if total_assertions > 0 else 0.0
 
             logfire.info(
                 "scoring_complete",

@@ -1,7 +1,7 @@
 """Function cases for optimization.
 
 Each case is a function with known implementation (ground truth) and a description.
-GePa will optimize the eval generation prompt so that generated evals
+GEPA will optimize the eval generation prompt so that generated evals
 correctly validate these original implementations.
 """
 

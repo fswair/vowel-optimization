@@ -222,9 +222,7 @@ def smart_str(s, encoding="utf-8", strings_only=False, errors="strict"):
             return str(s)
         except UnicodeEncodeError:
             if isinstance(s, Exception):
-                return " ".join(
-                    smart_str(arg, encoding, strings_only, errors) for arg in s.args
-                )
+                return " ".join(smart_str(arg, encoding, strings_only, errors) for arg in s.args)
             return str(s).encode(encoding, errors).decode(encoding)
 
 
@@ -247,11 +245,7 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     s.set_seq2(word)
     for x in possibilities:
         s.set_seq1(x)
-        if (
-            s.real_quick_ratio() >= cutoff
-            and s.quick_ratio() >= cutoff
-            and s.ratio() >= cutoff
-        ):
+        if s.real_quick_ratio() >= cutoff and s.quick_ratio() >= cutoff and s.ratio() >= cutoff:
             result.append((s.ratio(), x))
     result = sorted(result, key=lambda x: x[0], reverse=True)
     return [x for score, x in result[:n]]

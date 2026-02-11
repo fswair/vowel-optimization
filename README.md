@@ -1,8 +1,8 @@
 # vowel-optimization
 
-**GePa-powered prompt optimization playground for vowel eval spec generation.**
+**GEPA-powered prompt optimization playground for vowel eval spec generation.**
 
-This repository contains a research tool for optimizing vowel's `EVAL_SPEC_CONTEXT` prompt using [GePa](https://github.com/gepa-ai/gepa) (Genetic Pareto). By iteratively generating evaluation specs and measuring their quality against ground-truth function implementations, it discovers improved prompts that produce better test cases.
+This repository contains a research tool for optimizing vowel's `EVAL_SPEC_CONTEXT` prompt using [GEPA](https://github.com/GEPA-ai/GEPA) (Genetic Pareto). By iteratively generating evaluation specs and measuring their quality against ground-truth function implementations, it discovers improved prompts that produce better test cases.
 
 ---
 
@@ -11,7 +11,7 @@ This repository contains a research tool for optimizing vowel's `EVAL_SPEC_CONTE
 vowel generates YAML evaluation specs from function signatures and descriptions. The quality of these specs depends heavily on the system prompt (`EVAL_SPEC_CONTEXT`) used during generation. This tool:
 
 1. **Evaluates** the current prompt against a set of reference functions
-2. **Optimizes** the prompt via GePa's evolutionary search
+2. **Optimizes** the prompt via GEPA's evolutionary search
 3. **Compares** baseline vs optimized performance
 
 ### Debug
@@ -39,7 +39,7 @@ EVAL_SPEC_CONTEXT (prompt)
          ↓
      Score (pass rate)
          ↓
-   GePa: propose improvements
+   GEPA: propose improvements
          ↓
      [repeat until convergence]
 ```
@@ -66,7 +66,7 @@ pip install -e .
 
 - Python 3.11+
 - vowel
-- gepa
+- GEPA
 - pydantic-ai
 - logfire (for telemetry)
 
@@ -105,20 +105,20 @@ Failure breakdown:
 
 ### 2. Run Optimization
 
-Use GePa to improve the prompt over 50 metric evaluations:
+Use GEPA to improve the prompt over 50 metric evaluations:
 
 ```bash
 python -m vowel_optimization optimize --max-calls 50
 ```
 
 **What happens:**
-- GePa starts with `EVAL_SPEC_CONTEXT` as seed
+- GEPA starts with `EVAL_SPEC_CONTEXT` as seed
 - Evaluates on reference functions
 - Proposes improved versions via LLM reflection
 - Saves best candidate to `optimized_context.txt`
 
 **Options:**
-- `--max-calls N`: Maximum GePa iterations (default: 50)
+- `--max-calls N`: Maximum GEPA iterations (default: 50)
 - `--output path/to/file.txt`: Save location for optimized prompt
 - `--model MODEL`: Override eval model (default: `openrouter:google/gemini-3-flash-preview`)
 - `--proposer-model MODEL`: Override proposer model
@@ -214,7 +214,7 @@ python -m vowel_optimization optimize --model openai:gpt-4o
 
 ### Proposer Model
 
-Controls the LLM that suggests prompt improvements (GePa's reflection step):
+Controls the LLM that suggests prompt improvements (GEPA's reflection step):
 
 ```bash
 python -m vowel_optimization optimize \
@@ -241,7 +241,7 @@ vowel_optimization/
         ├── __init__.py
         ├── __main__.py        # CLI entry point
         ├── run_optimization.py # Main commands (eval, optimize, compare)
-        ├── adapter.py         # GePa adapter implementation
+        ├── adapter.py         # GEPA adapter implementation
         ├── task.py            # Core: generate + score eval specs
         ├── functions.py       # Reference function wrappers
         └── definitions.py     # Ground truth implementations
@@ -250,7 +250,7 @@ vowel_optimization/
 ### Key Files
 
 - **run_optimization.py**: CLI commands and orchestration
-- **adapter.py**: Bridges GePa's optimization loop with vowel's eval generation
+- **adapter.py**: Bridges GEPA's optimization loop with vowel's eval generation
 - **task.py**: Implements `generate_and_score()` — generates YAML, runs tests, diagnoses failures
 - **definitions.py**: Reference functions (json_encode, slugify, levenshtein, etc.)
 
@@ -258,7 +258,7 @@ vowel_optimization/
 
 ## How Optimization Works
 
-### GePa Adapter
+### GEPA Adapter
 
 The `VowelGEPAAdapter` implements three key methods:
 
@@ -287,7 +287,7 @@ These drive prompt refinements like:
 
 Uses [Logfire](https://logfire.dev/) for observability. Logs:
 - Each evaluation run with scores and failure breakdown
-- GePa optimization progress (candidates, scores, best context)
+- GEPA optimization progress (candidates, scores, best context)
 - Individual function case results
 
 Configure with `LOGFIRE_TOKEN` env var to enable cloud logging.
@@ -343,14 +343,14 @@ Total: 143/157 cases passed
 ```bash
 $ python -m vowel_optimization optimize --max-calls 30
 
-Starting GePa prompt optimization...
+Starting GEPA prompt optimization...
   Eval model: openrouter:google/gemini-3-flash-preview
   Proposer model: openrouter:google/gemini-3-flash-preview
   Max metric calls: 30
   Seed: default EVAL_SPEC_CONTEXT (2453 chars)
 ============================================================
 
-[GePa progress bar with candidate evaluation]
+[GEPA progress bar with candidate evaluation]
 
 ============================================================
 Optimization Complete!
@@ -388,11 +388,11 @@ MIT
 ## Related
 
 - **[vowel](https://github.com/fswair/vowel)**: YAML-based evaluation framework
-- **[GePa](https://github.com/gepa-ai/gepa)**: Genetic Pareto for meta-optimization
+- **[GEPA](https://github.com/GEPA-ai/GEPA)**: Genetic Pareto for meta-optimization
 - **[pydantic-ai](https://github.com/pydantic/pydantic-ai)**: Type-safe AI agent framework
 
 ---
 
 ## Reference
 
-Used [@dmontagu](https://github.com/dmontagu)'s [pydantic-ai-gepa-example](https://github.com/dmontagu/pydantic-ai-gepa-example) as seed repository.
+Used [@dmontagu](https://github.com/dmontagu)'s [pydantic-ai-GEPA-example](https://github.com/dmontagu/pydantic-ai-GEPA-example) as seed repository.
