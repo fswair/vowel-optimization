@@ -144,9 +144,7 @@ Return ONLY the improved EVAL_SPEC_CONTEXT text (no markdown fences, no explanat
 
         examples: list[dict[str, Any]] = []
 
-        for traj, score in zip(
-            eval_batch.trajectories, eval_batch.scores, strict=False
-        ):
+        for traj, score in zip(eval_batch.trajectories, eval_batch.scores, strict=False):
             result = traj.eval_result
             record: dict[str, Any] = {
                 "function": result.func_name,
@@ -188,7 +186,7 @@ Return ONLY the improved EVAL_SPEC_CONTEXT text (no markdown fences, no explanat
         components_to_update: list[str],
     ) -> dict[str, str]:
         """Propose improved EVAL_SPEC_CONTEXT based on failure feedback."""
-        with logfire.span("gepa_propose_new_texts"):
+        with logfire.span("GEPA_propose_new_texts"):
             current_context = json.loads(candidate["eval_spec_context"])
             examples = reflective_dataset.get("eval_spec_context", [])
 

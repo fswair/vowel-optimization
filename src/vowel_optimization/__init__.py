@@ -1,3 +1,3 @@
 """
-Optimization module built on GePa optimizer for vowel.
+Optimization module built on GEPA optimizer for vowel.
 """

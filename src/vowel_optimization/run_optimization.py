@@ -5,7 +5,7 @@ Usage:
     # Evaluate current EVAL_SPEC_CONTEXT against playground functions
     python -m vowel_optimization.run_optimization eval
 
-    # Run GePa optimization loop
+    # Run GEPA optimization loop
     python -m vowel_optimization.run_optimization optimize --max-calls 50
 
     # Evaluate with a saved optimized context
@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -27,6 +26,7 @@ import dotenv
 import logfire
 
 from vowel.context import EVAL_SPEC_CONTEXT
+from vowel.monitoring import enable_monitoring
 
 from .adapter import MODEL, PROPOSER_MODEL, create_adapter
 from .functions import FUNCTION_CASES
@@ -34,14 +34,14 @@ from .task import generate_and_score
 
 dotenv.load_dotenv()
 
-# ── Logfire setup ───────────────────────────────────────────
-if os.getenv("LOGFIRE_ENABLED", "false").lower() == "true":
-    logfire.configure(
-        service_name="vowel-optimization",
-        send_to_logfire="if-token-present",
-    )
-    logfire.instrument_pydantic_ai()
-    logfire.instrument_httpx(capture_all=True)
+# ── Logfire Monitoring & Observability ──
+
+enable_monitoring(
+    instrument_httpx=True,
+    httpx_capture_all=True,
+    service_name="vowel-optimization",
+    send_to_logfire="if-token-present",
+)
 
 
 def run_evaluation(
@@ -53,9 +53,7 @@ def run_evaluation(
 
     Returns average pass rate.
     """
-    with logfire.span(
-        "evaluation_run", label=label, context_chars=len(eval_spec_context)
-    ):
+    with logfire.span("evaluation_run", label=label, context_chars=len(eval_spec_context)):
         print(f"\n{'=' * 60}")
         print(f"Evaluating [{label}] context ({len(eval_spec_context)} chars)")
         print(f"{'=' * 60}")
@@ -80,9 +78,7 @@ def run_evaluation(
             if result.error:
                 print(f"ERROR: {result.error[:80]}")
             else:
-                print(
-                    f"{result.pass_rate:.0%} ({result.passed_cases}/{result.total_cases})"
-                )
+                print(f"{result.pass_rate:.0%} ({result.passed_cases}/{result.total_cases})")
                 for f in result.failures:
                     all_failures[f.category] = all_failures.get(f.category, 0) + 1
 
@@ -116,7 +112,7 @@ def run_optimization(
     proposer_model: str = PROPOSER_MODEL,
     seed_file: str | None = None,
 ) -> str:
-    """Run GePa optimization to improve EVAL_SPEC_CONTEXT.
+    """Run GEPA optimization to improve EVAL_SPEC_CONTEXT.
 
     Returns the optimized context string.
     """
@@ -129,7 +125,7 @@ def run_optimization(
         max_metric_calls=max_metric_calls,
         num_functions=len(FUNCTION_CASES),
     ):
-        print("\nStarting GePa prompt optimization...")
+        print("\nStarting GEPA prompt optimization...")
         print(f"  Eval model: {eval_model}")
         print(f"  Proposer model: {proposer_model}")
         print(f"  Max metric calls: {max_metric_calls}")
@@ -151,7 +147,7 @@ def run_optimization(
             "eval_spec_context": json.dumps(seed_context),
         }
 
-        logfire.info("gepa_optimize_start", seed_context_chars=len(seed_context))
+        logfire.info("GEPA_optimize_start", seed_context_chars=len(seed_context))
 
         result = optimize(
             seed_candidate=seed_candidate,
@@ -196,13 +192,13 @@ def run_compare(
 ) -> None:
     """Compare multiple context files, or one file vs default EVAL_SPEC_CONTEXT."""
     results = []
-    
+
     # If only 1 file provided, compare against default EVAL_SPEC_CONTEXT
     if len(context_files) == 1:
         print("\n1. Current EVAL_SPEC_CONTEXT:")
         score_current = run_evaluation(EVAL_SPEC_CONTEXT, model=model, label="current")
         results.append(("EVAL_SPEC_CONTEXT", score_current))
-        
+
         file_path = context_files[0]
         context = Path(file_path).read_text()
         label = Path(file_path).name
@@ -214,25 +210,23 @@ def run_compare(
         for i, file_path in enumerate(context_files, 1):
             context = Path(file_path).read_text()
             label = Path(file_path).name
-            
+
             print(f"\n{i}. {label}:")
             score = run_evaluation(context, model=model, label=label)
             results.append((label, score))
-    
+
     print(f"\n{'=' * 60}")
     print("Comparison:")
     for label, score in results:
         print(f"  {label}: {score:.0%}")
-    
+
     if len(results) == 2:
         diff = results[1][1] - results[0][1]
         print(f"  Δ: {diff:+.0%}")
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Vowel eval spec prompt optimization via GePa"
-    )
+    parser = argparse.ArgumentParser(description="Vowel eval spec prompt optimization via GEPA")
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
 
     # eval
@@ -243,13 +237,11 @@ def main() -> int:
     eval_p.add_argument("--model", type=str, default=MODEL, help="Eval model")
 
     # optimize
-    opt_p = subparsers.add_parser("optimize", help="Run GePa optimization")
+    opt_p = subparsers.add_parser("optimize", help="Run GEPA optimization")
     opt_p.add_argument("--max-calls", type=int, default=50, help="Max metric calls")
     opt_p.add_argument("--output", type=str, help="File to save optimized context")
     opt_p.add_argument("--model", type=str, default=MODEL, help="Eval model")
-    opt_p.add_argument(
-        "--proposer-model", type=str, default=PROPOSER_MODEL, help="Proposer model"
-    )
+    opt_p.add_argument("--proposer-model", type=str, default=PROPOSER_MODEL, help="Proposer model")
     opt_p.add_argument(
         "--seed-file", type=str, help="Start from a previously optimized context file"
     )
