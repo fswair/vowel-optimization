@@ -23,14 +23,14 @@ import os
 import sys
 from pathlib import Path
 
+import dotenv
 import logfire
+
 from vowel.context import EVAL_SPEC_CONTEXT
 
 from .adapter import MODEL, PROPOSER_MODEL, create_adapter
 from .functions import FUNCTION_CASES
 from .task import generate_and_score
-
-import dotenv 
 
 dotenv.load_dotenv()
 
