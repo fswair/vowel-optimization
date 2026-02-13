@@ -186,7 +186,7 @@ Return ONLY the improved EVAL_SPEC_CONTEXT text (no markdown fences, no explanat
         components_to_update: list[str],
     ) -> dict[str, str]:
         """Propose improved EVAL_SPEC_CONTEXT based on failure feedback."""
-        with logfire.span("GEPA_propose_new_texts"):
+        with logfire.span("gepa_propose_new_texts"):
             current_context = json.loads(candidate["eval_spec_context"])
             examples = reflective_dataset.get("eval_spec_context", [])
 

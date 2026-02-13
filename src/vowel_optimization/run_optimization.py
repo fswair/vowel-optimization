@@ -146,7 +146,7 @@ def run_optimization(
             "eval_spec_context": json.dumps(seed_context),
         }
 
-        logfire.info("GEPA_optimize_start", seed_context_chars=len(seed_context))
+        logfire.info("gepa_optimize_start", seed_context_chars=len(seed_context))
 
         result = optimize(
             seed_candidate=seed_candidate,

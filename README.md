@@ -2,7 +2,7 @@
 
 **GEPA-powered prompt optimization playground for vowel eval spec generation.**
 
-This repository contains a research tool for optimizing vowel's `EVAL_SPEC_CONTEXT` prompt using [GEPA](https://github.com/GEPA-ai/GEPA) (Genetic Pareto). By iteratively generating evaluation specs and measuring their quality against ground-truth function implementations, it discovers improved prompts that produce better test cases.
+This repository contains a research tool for optimizing vowel's `EVAL_SPEC_CONTEXT` prompt using [GEPA](https://github.com/gepa-ai/gepa) (Genetic Pareto). By iteratively generating evaluation specs and measuring their quality against ground-truth function implementations, it discovers improved prompts that produce better test cases.
 
 ---
 
@@ -388,11 +388,11 @@ MIT
 ## Related
 
 - **[vowel](https://github.com/fswair/vowel)**: YAML-based evaluation framework
-- **[GEPA](https://github.com/GEPA-ai/GEPA)**: Genetic Pareto for meta-optimization
+- **[GEPA](https://github.com/gepa-ai/gepa)**: Genetic Pareto for meta-optimization
 - **[pydantic-ai](https://github.com/pydantic/pydantic-ai)**: Type-safe AI agent framework
 
 ---
 
 ## Reference
 
-Used [@dmontagu](https://github.com/dmontagu)'s [pydantic-ai-GEPA-example](https://github.com/dmontagu/pydantic-ai-GEPA-example) as seed repository.
+Used [@dmontagu](https://github.com/dmontagu)'s [pydantic-ai-gepa-example](https://github.com/dmontagu/pydantic-ai-gepa-example) as seed repository.
